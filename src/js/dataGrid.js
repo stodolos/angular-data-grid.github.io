@@ -71,16 +71,22 @@
             };
 
             $scope.$on('$locationChangeSuccess', function () {
-                onChangeStateOrLocation()
+                onChangeStateOrLocation();
             });
 
             $scope.$on("$stateChangeSuccess", function (event, toState) {
-                onChangeStateOrLocation()
+                onChangeStateOrLocation();
             });
 
-            $scope.reloadGrid = function (isDefaultSort) {
+            $scope.reloadGrid = function (isDefaultSort, force) {
                 if ($scope.urlSync || $scope.serverPagination) {
-                    changePath(isDefaultSort);
+                    if (force) {
+                        $rootScope.$broadcast('gridReloaded');
+                        onChangeStateOrLocation();
+                        return;
+                    } else {
+                        changePath(isDefaultSort);
+                    }
                 } else {
                     applyFilters();
                 }
@@ -91,7 +97,7 @@
             $scope._gridActions.filter = $scope.filter;
             $scope._gridActions.sort = $scope.sort;
 
-            function onChangeStateOrLocation(){
+            function onChangeStateOrLocation() {
                 if ($scope.urlSync || $scope.serverPagination) {
                     if ($scope.serverPagination) {
                         clearTimeout($scope.getDataTimeout);
@@ -153,7 +159,7 @@
                 var params = $location.search(),
                     customParams = {};
 
-                Object.keys(params).forEach(function(key) {
+                Object.keys(params).forEach(function (key) {
                     if (key !== 'page' && key !== 'sort' && key !== 'itemsPerPage') {
                         customParams[key] = params[key];
                     }
@@ -221,7 +227,7 @@
             function getData() {
                 var url = '';
                 var params = $location.search();
-                Object.keys(params).forEach(function(key) {
+                Object.keys(params).forEach(function (key) {
                     url += key + '=' + params[key] + '&';
                 });
                 url = url.slice(0, -1);
@@ -241,13 +247,14 @@
             }
 
             function applyFilters() {
-                var time = Date.now(), sorted = false;
+                var time = Date.now(),
+                    sorted = false;
 
                 //TO REMOVE ?
                 $scope._time = {};
 
-                if ($scope.sortOptions.predicate && $scope.sortCache && $scope.sortCache.predicate === $scope.sortOptions.predicate
-                    && $scope.sortCache.direction === $scope.sortOptions.direction) {
+                if ($scope.sortOptions.predicate && $scope.sortCache && $scope.sortCache.predicate === $scope.sortOptions.predicate &&
+                    $scope.sortCache.direction === $scope.sortOptions.direction) {
                     $scope.filtered = $scope.sortCache.data.slice();
                     sorted = true;
                 } else {
@@ -293,7 +300,7 @@
         .directive('gridItem', ['$compile', function ($compile) {
             return {
                 restrict: 'EA',
-                terminal:true,
+                terminal: true,
                 scope: false,
                 link: function ($scope, element, attrs, ctrl, transclude) {
                     if ($scope.serverPagination) {
@@ -335,7 +342,7 @@
                         var element = angular.element(filter),
                             predicate = element.attr('filter-by'),
                             dataGridElement = document.querySelectorAll('[grid-data]')[0],
-                            isInScope = dataGridElement.querySelectorAll('[filter-by="'+ predicate+'"]').length > 0,
+                            isInScope = dataGridElement.querySelectorAll('[filter-by="' + predicate + '"]').length > 0,
                             filterType = element.attr('filter-type') || '',
                             urlName = element.attr('ng-model'),
                             disableUrl = element.attr('disable-url');
@@ -344,13 +351,12 @@
                             return;
                         }
 
-                        if (filterType !== 'select') {
-                        } else {
+                        if (filterType !== 'select') {} else {
                             $scope[urlName + 'Options'] = generateOptions($scope.$eval($element.attr('grid-options') + '.data'), predicate);
                         }
 
-                        if (~filterType.indexOf('date') && !element.attr('ng-focus')
-                            && !element.attr('ng-blur')) {
+                        if (~filterType.indexOf('date') && !element.attr('ng-focus') &&
+                            !element.attr('ng-blur')) {
                             element.attr('ng-focus', "filter('{" + urlName + " : " + "this." + urlName + "}')");
                             element.attr('ng-blur', "filter('{" + urlName + " : " + "this." + urlName + "}')");
                             //$compile(element)($scope);
@@ -405,26 +411,26 @@
             return {
                 getFilterByType: function (type) {
                     switch (type) {
-                        case 'select' :
-                        {
-                            return selectFilter;
-                        }
-                        case 'text' :
-                        {
-                            return textFilter;
-                        }
+                        case 'select':
+                            {
+                                return selectFilter;
+                            }
+                        case 'text':
+                            {
+                                return textFilter;
+                            }
                         case 'dateTo':
-                        {
-                            return dateToFilter;
-                        }
+                            {
+                                return dateToFilter;
+                            }
                         case 'dateFrom':
-                        {
-                            return dateFromFilter;
-                        }
-                        default :
-                        {
-                            return null;
-                        }
+                            {
+                                return dateFromFilter;
+                            }
+                        default:
+                            {
+                                return null;
+                            }
                     }
                 }
             }
@@ -440,7 +446,10 @@
             });
 
             return array.map(function (option) {
-                return {text: option, value: option};
+                return {
+                    text: option,
+                    value: option
+                };
             });
         }
     }
